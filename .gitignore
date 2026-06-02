@@ -1,0 +1,70 @@
+# ── Python ───────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+
+# Environnements virtuels
+venv/
+.venv/
+env/
+.env/
+ENV/
+
+# ── Variables d'environnement (clés API) ─────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Données FastText & embeddings (fichiers volumineux) ──────────────
+backend/cc.fr.300.vec.gz
+backend/cc.fr.300.vec
+backend/cc.fr.300.bin
+backend/cc.fr.300.bin.gz
+
+# Fichiers générés par build_vocab.py
+backend/vocab.json
+backend/embeddings.npy
+
+# Fichiers de test temporaires
+backend/test_sim.py
+backend/test_words.txt
+
+# ── Node.js ───────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build frontend
+frontend/dist/
+frontend/.vite/
+
+# ── Éditeurs & OS ─────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Logs ──────────────────────────────────────────────────────────────
+*.log
+logs/
