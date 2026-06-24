@@ -77,10 +77,10 @@ export default function ChatWidget({ guesses, gameOver }) {
     setInput("");
     setLoading(true);
 
-    // Timeout de 30 secondes pour ne pas rester bloqué indéfiniment
+    // Timeout de 90 secondes (Render free tier : cold start + chargement embeddings)
     const controller = new AbortController();
     abortRef.current = controller;
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
 
     try {
       const conversationHistory = messages.map(m => ({
