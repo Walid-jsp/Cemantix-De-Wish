@@ -7,20 +7,15 @@ et ne révèle JAMAIS le mot secret.
 
 Supporte plusieurs personnalités : coach, sphinx, professeur.
 Gère un quota journalier pour ne jamais dépasser le free tier Gemini.
-
-Utilise l'API REST directe de Gemini (sans SDK gRPC) pour éviter
-les problèmes de connexion sur les hébergeurs cloud gratuits.
 """
 
 import os
-import requests
+import google.generativeai as genai
 from quota import can_call_gemini, increment_counter
 
 # ── Configuration ────────────────────────────────────────────────────
 
 _GEMINI_MODEL = "gemini-3.5-flash"
-_GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-_REQUEST_TIMEOUT = 25  # secondes — le frontend coupe à 30s, on laisse une marge
 
 # ── Personnalités du chatbot ─────────────────────────────────────────
 
@@ -119,7 +114,7 @@ def get_hint(
     personality: str = "coach",
 ) -> str:
     """
-    Interroge l'API REST Gemini directement (sans SDK gRPC) pour obtenir un indice.
+    Interroge Gemini pour obtenir un indice.
 
     Args:
         secret_word:          Le mot secret du jour.
@@ -143,6 +138,8 @@ def get_hint(
             "le quota quotidien a été atteint. Reviens demain pour de nouveaux indices !"
         )
 
+    genai.configure(api_key=api_key, transport="rest")
+
     player_context = _build_player_context(guesses)
     personality_prompt = PERSONALITY_PROMPTS.get(personality, PERSONALITY_PROMPTS["coach"])
 
@@ -161,49 +158,24 @@ def get_hint(
     else:
         system += "C'est le dernier indice, sois aussi utile que possible (sans donner le mot)."
 
-    # Construction des messages au format REST API
-    contents = []
+    # Construction des messages
+    messages = []
     if conversation_history:
         for msg in conversation_history:
             role = "user" if msg.get("role") == "user" else "model"
-            contents.append({"role": role, "parts": [{"text": msg.get("content", "")}]})
+            messages.append({"role": role, "parts": [msg.get("content", "")]})
 
-    contents.append({"role": "user", "parts": [{"text": player_message}]})
+    messages.append({"role": "user", "parts": [player_message]})
 
-    # Corps de la requête REST
-    payload = {
-        "system_instruction": {"parts": [{"text": system}]},
-        "contents": contents,
-        "generationConfig": {
-            "maxOutputTokens": 256,
-            "temperature": 0.8,
-        },
-    }
-
-    url = _GEMINI_API_URL.format(model=_GEMINI_MODEL)
-
-    response = requests.post(
-        url,
-        params={"key": api_key},
-        json=payload,
-        timeout=_REQUEST_TIMEOUT,
+    model = genai.GenerativeModel(
+        model_name=_GEMINI_MODEL,
+        system_instruction=system,
     )
 
-    if response.status_code != 200:
-        error_detail = response.text[:200]
-        print(f"[ERREUR GEMINI] Status {response.status_code}: {error_detail}")
-        raise Exception(f"Erreur API Gemini ({response.status_code})")
-
-    data = response.json()
-
-    # Extraire le texte de la réponse
-    try:
-        text = data["candidates"][0]["content"]["parts"][0]["text"]
-    except (KeyError, IndexError) as e:
-        print(f"[ERREUR GEMINI] Réponse inattendue : {data}")
-        raise Exception("Format de réponse Gemini inattendu")
+    chat = model.start_chat(history=messages[:-1])
+    response = chat.send_message(messages[-1]["parts"][0])
 
     # Incrémenter le compteur uniquement après un appel réussi
     increment_counter()
 
-    return text
+    return response.text
