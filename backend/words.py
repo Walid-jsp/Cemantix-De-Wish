@@ -18,7 +18,9 @@ def get_vocab() -> list[str]:
     global _vocab
     if _vocab is None:
         try:
-            with open("vocab.json", "r", encoding="utf-8") as f:
+            # On cherche vocab.json dans le même dossier que ce script (backend)
+            vocab_path = os.path.join(os.path.dirname(__file__), "vocab.json")
+            with open(vocab_path, "r", encoding="utf-8") as f:
                 _vocab = json.load(f)
         except Exception:
             # Fallback de secours si le dictionnaire n'est pas encore construit
@@ -43,3 +45,17 @@ def get_daily_word(target_date: date | None = None) -> str:
     index = int(hash_hex, 16) % pool_size
     
     return vocab[index]
+
+if __name__ == "__main__":
+    import sys
+    from datetime import datetime
+
+    if len(sys.argv) > 1:
+        # Permet de passer une date en argument, ex: python words.py 2026-06-25
+        try:
+            target = datetime.strptime(sys.argv[1], "%Y-%m-%d").date()
+            print(f"Le mot secret pour le {target.isoformat()} est : \033[1;32m{get_daily_word(target)}\033[0m")
+        except ValueError:
+            print("Format de date invalide. Utilisez AAAA-MM-JJ.")
+    else:
+        print(f"Le mot secret d'aujourd'hui est : \033[1;32m{get_daily_word()}\033[0m")
