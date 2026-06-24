@@ -80,7 +80,7 @@ export default function ChatWidget({ guesses, gameOver }) {
     // Timeout de 30 secondes pour ne pas rester bloqué indéfiniment
     const controller = new AbortController();
     abortRef.current = controller;
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     try {
       const conversationHistory = messages.map(m => ({
