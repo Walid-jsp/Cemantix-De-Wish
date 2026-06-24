@@ -15,7 +15,7 @@ from quota import can_call_gemini, increment_counter
 
 # ── Configuration ────────────────────────────────────────────────────
 
-_GEMINI_MODEL = "gemini-3.5-flash"
+_GEMINI_MODEL = "gemini-2.0-flash"
 
 # ── Personnalités du chatbot ─────────────────────────────────────────
 

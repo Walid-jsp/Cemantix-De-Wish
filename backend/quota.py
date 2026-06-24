@@ -5,7 +5,7 @@ Maintient un compteur en mémoire (remis à zéro automatiquement chaque jour).
 Si le quota quotidien est atteint, les appels à Gemini sont bloqués
 et une réponse de secours est retournée au joueur.
 
-Quota gratuit Gemini 3.5 Flash : 1 500 requêtes / jour.
+Quota gratuit Gemini 2.0 Flash : 1 500 requêtes / jour.
 On prend une marge de sécurité et on limite à 1 400.
 """
 
