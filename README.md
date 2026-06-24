@@ -1,4 +1,4 @@
-# 🧠 Cémantix De Wish
+# 🧠 Cémantish
 
 > Un jeu de devinette quotidien basé sur la **similarité sémantique** — trouve le mot secret grâce à l'IA.
 
@@ -31,7 +31,7 @@ Inspiré du jeu [Cémantix](https://cemantix.certitudes.org/), cette version per
 ## 🏗️ Architecture
 
 ```
-CémantixDeWish/
+Cémantish/
 ├── backend/                  # API Python (FastAPI)
 │   ├── main.py               # Endpoints HTTP
 │   ├── game.py               # Moteur de similarité sémantique
@@ -287,5 +287,5 @@ frontend/node_modules/
 
 ## 📄 Licence
 
-Projet personnel — inspiré de [Cémantix](https://cemantix.certitudes.org/).  
+Projet personnel — inspiré de Cémantish.  
 Les embeddings FastText sont distribués sous licence [CC-BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/).

@@ -1,0 +1,17 @@
+{
+  "name": "Cémantish",
+  "short_name": "Cémantish",
+  "description": "Jeu de devinette quotidien basé sur la similarité sémantique.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080810",
+  "theme_color": "#080810",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

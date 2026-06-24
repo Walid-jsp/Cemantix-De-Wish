@@ -2,8 +2,8 @@
 words.py — Liste de mots et sélection déterministe du mot quotidien.
 
 Utilise le dictionnaire complet généré par build_vocab.py.
-La sélection se fait parmi les 3000 premiers mots (les plus fréquents)
-pour s'assurer que le mot à deviner est connu de tous.
+La sélection se fait parmi les 8000 premiers mots (les plus fréquents)
+pour offrir plus de variété tout en garantissant des mots connus.
 """
 
 import os
@@ -34,8 +34,9 @@ def get_daily_word(target_date: date | None = None) -> str:
         target_date = date.today()
 
     vocab = get_vocab()
-    # On se restreint aux 3000 premiers mots (les plus fréquents) pour éviter un mot trop obscur
-    pool_size = min(3000, len(vocab))
+    # On se restreint aux 8000 premiers mots (les plus fréquents) pour offrir plus de variété
+    # tout en évitant les termes trop rares ou obscurs
+    pool_size = min(8000, len(vocab))
     
     date_str = target_date.isoformat()  # format AAAA-MM-JJ
     hash_hex = hashlib.sha256(date_str.encode("utf-8")).hexdigest()

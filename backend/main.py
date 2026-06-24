@@ -6,7 +6,6 @@ Endpoints :
     POST /api/game/guess       → Soumettre un mot
     GET  /api/game/hint-count  → Nombre d'indices restants (géré côté client)
     POST /api/chat             → Demander un indice au chatbot
-    POST /api/game/give-up     → Abandonner et révéler le mot
 """
 
 from contextlib import asynccontextmanager
@@ -17,13 +16,20 @@ from dotenv import load_dotenv
 # Charger les variables d'environnement depuis le fichier .env
 load_dotenv()
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from game import load_model, compute_score
 from words import get_daily_word
 from chatbot import get_hint
+from quota import get_status as get_quota_status
+
+# ── Rate Limiting ────────────────────────────────────────────────────
+limiter = Limiter(key_func=get_remote_address)
 
 
 # ── Lifecycle : chargement du modèle au démarrage ───────────────────
@@ -45,11 +51,19 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 # ── CORS ─────────────────────────────────────────────────────────────
+
+# En production, définir ALLOWED_ORIGINS dans les variables d'environnement
+# Ex: ALLOWED_ORIGINS=https://cemantix-de-wish.vercel.app,https://mon-domaine.com
+_default_origins = "http://localhost:5173,http://localhost:3000,https://cemantix-de-wish.vercel.app,https://cemantish.vercel.app"
+_origins = os.environ.get("ALLOWED_ORIGINS", _default_origins).split(",")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=[o.strip() for o in _origins],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -74,6 +88,7 @@ class ChatRequest(BaseModel):
     guesses: list[dict] = []
     hint_number: int = 1
     conversation_history: list[dict] = []
+    personality: str = "coach"  # "coach" | "sphinx" | "professor"
 
 
 class ChatResponse(BaseModel):
@@ -83,10 +98,6 @@ class ChatResponse(BaseModel):
 class StatusResponse(BaseModel):
     date: str
     game_active: bool
-
-
-class GiveUpResponse(BaseModel):
-    secret_word: str
 
 
 # ── Endpoints ────────────────────────────────────────────────────────
@@ -99,7 +110,8 @@ async def game_status():
 
 
 @app.post("/api/game/guess", response_model=GuessResponse)
-async def game_guess(req: GuessRequest):
+@limiter.limit("60/minute")
+async def game_guess(req: GuessRequest, request: Request):
     """
     Soumet un mot et renvoie le score de similarité sémantique.
     """
@@ -137,8 +149,18 @@ async def hint_count():
     return {"max_hints": 5}
 
 
+@app.get("/api/quota/status")
+async def quota_status():
+    """
+    Retourne l'état du quota journalier Gemini.
+    Utile pour le monitoring et le débogage.
+    """
+    return get_quota_status()
+
+
 @app.post("/api/chat", response_model=ChatResponse)
-async def chat(req: ChatRequest):
+@limiter.limit("10/minute")
+async def chat(req: ChatRequest, request: Request):
     """
     Envoie un message au chatbot Gemini et renvoie la réponse.
     """
@@ -147,7 +169,7 @@ async def chat(req: ChatRequest):
 
     if req.hint_number > 5:
         return ChatResponse(
-            reply="🚫 Tu as utilisé tes 5 indices pour aujourd'hui. Reviens demain pour de nouveaux indices !"
+            reply="Tu as utilisé tes 5 indices pour aujourd'hui. Reviens demain pour de nouveaux indices !"
         )
 
     secret = get_daily_word()
@@ -159,6 +181,7 @@ async def chat(req: ChatRequest):
             guesses=req.guesses,
             hint_number=req.hint_number,
             conversation_history=req.conversation_history,
+            personality=req.personality,
         )
     except Exception as e:
         print(f"Erreur chatbot : {e}")
@@ -168,10 +191,3 @@ async def chat(req: ChatRequest):
         )
 
     return ChatResponse(reply=reply)
-
-
-@app.post("/api/game/give-up", response_model=GiveUpResponse)
-async def give_up():
-    """Révèle le mot secret (abandon)."""
-    secret = get_daily_word()
-    return GiveUpResponse(secret_word=secret)

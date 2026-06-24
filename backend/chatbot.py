@@ -4,14 +4,44 @@ chatbot.py — Intégration de l'API Gemini pour le chatbot d'indices.
 Le bot connaît le mot secret et les tentatives passées du joueur.
 Il donne des indices progressifs (du plus vague au plus précis)
 et ne révèle JAMAIS le mot secret.
+
+Supporte plusieurs personnalités : coach, sphinx, professeur.
+Gère un quota journalier pour ne jamais dépasser le free tier Gemini.
 """
 
 import os
 import google.generativeai as genai
+from quota import can_call_gemini, increment_counter
 
 # ── Configuration ────────────────────────────────────────────────────
 
 _GEMINI_MODEL = "gemini-3.5-flash"
+
+# ── Personnalités du chatbot ─────────────────────────────────────────
+
+PERSONALITY_PROMPTS = {
+    "coach": """
+## TA PERSONNALITÉ : Le Coach Ultra-Motivé
+Tu es un coach de sport mental, hyper positif et explosif en énergie. Tu utilises des métaphores sportives.
+- Ton langage est dynamique, enthousiaste, avec des exclamations.
+- Tu félicites chaque progrès même minime, tu pousses le joueur à se dépasser.
+- Exemples de ton : "Allez champion !", "Tu chauffes !", "C'est dans ta tête, lâche-toi !", "GO GO GO !"
+""",
+    "sphinx": """
+## TA PERSONNALITÉ : Le Sphinx Énigmatique
+Tu es un oracle mystérieux et poétique qui s'exprime par énigmes et métaphores.
+- Ton langage est cryptique, métaphorique, parsemé d'images lyriques.
+- Tu ne dis jamais les choses directement, tu les enveloppes dans des images.
+- Exemples de ton : "Ce que tu cherches dort dans l'ombre de l'évident...", "Le vent te souffle ce que l'eau garde secret..."
+""",
+    "professor": """
+## TA PERSONNALITÉ : Le Professeur Grognon
+Tu es un vieux professeur ronchon mais brillant. Impatient face aux erreurs, sarcastique mais juste.
+- Ton langage est direct, un peu condescendant mais bienveillant au fond.
+- Tu soupires souvent face aux mauvaises réponses mais tu aides quand même.
+- Exemples de ton : "Encore raté... Bon, je vais devoir vous expliquer.", "C'est franchement décevant, mais voici un indice :", "Réfléchissez un peu, voyons !"
+""",
+}
 
 SYSTEM_PROMPT = """Tu es l'assistant du jeu Sémantix+, un jeu de devinette de mot quotidien.
 
@@ -39,11 +69,12 @@ Le mot secret d'aujourd'hui est : **{secret_word}**
 ## ADAPTATION AU JOUEUR
 {player_context}
 
+{personality_prompt}
+
 ## FORMAT DE RÉPONSE
 - Réponds en français, de façon concise (2-3 phrases max).
-- Sois chaleureux et encourageant.
-- Si le joueur a un score > 700 sur un mot, félicite-le et dis-lui qu'il est très proche.
-- Utilise des emojis avec parcimonie (1-2 max par réponse).
+- Si le joueur a un score > 700 sur un mot, dis-lui qu'il est très proche.
+- N'utilise PAS d'émojis dans tes réponses.
 """
 
 
@@ -65,7 +96,7 @@ def _build_player_context(guesses: list[dict]) -> str:
 
     best_score = sorted_guesses[0].get("score", 0) if sorted_guesses else 0
     if best_score >= 700:
-        lines.append(f"\n⚡ Le joueur est TRÈS PROCHE (meilleur score : {best_score}). Sois encourageant !")
+        lines.append(f"\nLe joueur est TRÈS PROCHE (meilleur score : {best_score}). Sois encourageant !")
     elif best_score >= 400:
         lines.append(f"\nLe joueur progresse bien (meilleur score : {best_score}).")
     else:
@@ -80,6 +111,7 @@ def get_hint(
     guesses: list[dict],
     hint_number: int,
     conversation_history: list[dict] | None = None,
+    personality: str = "coach",
 ) -> str:
     """
     Interroge Gemini pour obtenir un indice.
@@ -90,20 +122,31 @@ def get_hint(
         guesses:              Liste des tentatives du joueur [{word, score}, ...].
         hint_number:          Numéro de l'indice (1 à 5).
         conversation_history: Historique du chat [{role, content}, ...].
+        personality:          Personnalité du bot ("coach" | "sphinx" | "professor").
 
     Returns:
         La réponse textuelle de Gemini.
     """
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        return "⚠️ La clé API Gemini n'est pas configurée. Contactez l'administrateur."
+        return "La clé API Gemini n'est pas configurée. Contactez l'administrateur."
+
+    # Vérification du quota journalier
+    if not can_call_gemini():
+        return (
+            "Le service d'indices est temporairement indisponible aujourd'hui — "
+            "le quota quotidien a été atteint. Reviens demain pour de nouveaux indices !"
+        )
 
     genai.configure(api_key=api_key)
 
     player_context = _build_player_context(guesses)
+    personality_prompt = PERSONALITY_PROMPTS.get(personality, PERSONALITY_PROMPTS["coach"])
+
     system = SYSTEM_PROMPT.format(
         secret_word=secret_word,
         player_context=player_context,
+        personality_prompt=personality_prompt,
     )
 
     # Ajout du numéro d'indice dans le contexte
@@ -131,5 +174,8 @@ def get_hint(
 
     chat = model.start_chat(history=messages[:-1])
     response = chat.send_message(messages[-1]["parts"][0])
+
+    # Incrémenter le compteur uniquement après un appel réussi
+    increment_counter()
 
     return response.text

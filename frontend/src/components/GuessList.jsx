@@ -1,3 +1,5 @@
+import { FlameIcon, SparkIcon, LightbulbIcon, SnowflakeIcon, TrophyIcon } from "./Icons";
+
 /**
  * Retourne la couleur et le gradient selon le score (Top 1000) ou la similarité brute (hors top).
  */
@@ -11,13 +13,20 @@ function getScoreStyle(score, isTop1000) {
     };
   }
 
-  // Score de 1 à 1000
   if (score >= 990) return { barColor: "var(--perfect)", scoreColor: "var(--perfect)", barWidth: "100%", rowAccent: "var(--perfect)" };
   if (score >= 800) return { barColor: "var(--hot-5)", scoreColor: "var(--hot-5)", barWidth: `${(score / 1000) * 100}%`, rowAccent: "var(--hot-5)" };
   if (score >= 600) return { barColor: "var(--hot-4)", scoreColor: "var(--hot-4)", barWidth: `${(score / 1000) * 100}%`, rowAccent: "var(--hot-4)" };
   if (score >= 400) return { barColor: "var(--hot-3)", scoreColor: "var(--hot-3)", barWidth: `${(score / 1000) * 100}%`, rowAccent: "var(--hot-3)" };
   if (score >= 200) return { barColor: "var(--hot-2)", scoreColor: "var(--hot-2)", barWidth: `${(score / 1000) * 100}%`, rowAccent: "var(--hot-2)" };
   return { barColor: "var(--hot-1)", scoreColor: "var(--hot-1)", barWidth: `${(score / 1000) * 100}%`, rowAccent: "var(--hot-1)" };
+}
+
+function RankIcon({ guess }) {
+  if (!guess.is_top_1000) return <SnowflakeIcon size={16} className="rank-svg cold" />;
+  if (guess.score === 1000) return <TrophyIcon size={16} className="rank-svg perfect" />;
+  if (guess.score >= 900) return <FlameIcon size={16} className="rank-svg super-hot" />;
+  if (guess.score >= 600) return <SparkIcon size={16} className="rank-svg hot" />;
+  return <LightbulbIcon size={16} className="rank-svg warm" />;
 }
 
 export default function GuessList({ guesses }) {
@@ -31,7 +40,9 @@ export default function GuessList({ guesses }) {
   if (sorted.length === 0) {
     return (
       <div className="empty-state">
-        <div className="empty-icon">💬</div>
+        <div className="empty-icon-svg">
+          <SparkIcon size={36} className="empty-spark" />
+        </div>
         <p>Tape ton premier mot pour commencer !</p>
       </div>
     );
@@ -43,26 +54,29 @@ export default function GuessList({ guesses }) {
         const realRank = guess.is_top_1000 ? 1000 - guess.score : null;
         const { barColor, scoreColor, barWidth, rowAccent } = getScoreStyle(guess.score, guess.is_top_1000);
 
-        const rankIcon  = !guess.is_top_1000 ? "❄️"
-                        : guess.score === 1000 ? "🏆"
-                        : guess.score >= 900   ? "🔥"
-                        : guess.score >= 600   ? "✨"
-                        : "💡";
-
         const rankLabel = guess.is_top_1000 && guess.score < 1000
           ? `#${realRank}`
           : null;
 
+        // Classes d'animation selon la température
+        const tempClass = !guess.is_top_1000
+          ? "temp-cold"
+          : guess.score >= 900
+          ? "temp-fire"
+          : guess.score >= 600
+          ? "temp-hot"
+          : "temp-warm";
+
         return (
           <div
             key={`${guess.word}-${guess.score}`}
-            className={`guess-row${guess.found ? " found" : ""}`}
+            className={`guess-row ${tempClass}${guess.found ? " found" : ""}`}
             id={`guess-${index}`}
             style={{ "--row-accent": rowAccent }}
           >
             {/* Rank */}
             <div className="guess-rank">
-              <span className="rank-icon">{rankIcon}</span>
+              <RankIcon guess={guess} />
               {rankLabel && <span className="rank-num">{rankLabel}</span>}
             </div>
 

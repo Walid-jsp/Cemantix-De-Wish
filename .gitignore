@@ -36,9 +36,9 @@ backend/cc.fr.300.vec
 backend/cc.fr.300.bin
 backend/cc.fr.300.bin.gz
 
-# Fichiers générés par build_vocab.py
-backend/vocab.json
-backend/embeddings.npy
+# Fichiers générés par build_vocab.py (maintenant inclus pour le déploiement)
+# backend/vocab.json
+# backend/embeddings.npy
 
 # Fichiers de test temporaires
 backend/test_sim.py

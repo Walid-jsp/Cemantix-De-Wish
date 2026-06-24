@@ -1,4 +1,4 @@
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 export async function fetchStatus() {
   const res = await fetch(`${API_BASE}/api/game/status`);
@@ -20,7 +20,7 @@ export async function submitGuess(word) {
   return res.json();
 }
 
-export async function sendChatMessage(message, guesses, hintNumber, conversationHistory) {
+export async function sendChatMessage(message, guesses, hintNumber, conversationHistory, personality = "coach", signal = null) {
   const res = await fetch(`${API_BASE}/api/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -29,15 +29,9 @@ export async function sendChatMessage(message, guesses, hintNumber, conversation
       guesses,
       hint_number: hintNumber,
       conversation_history: conversationHistory,
+      personality,
     }),
-  });
-  if (!res.ok) throw new Error("Erreur serveur");
-  return res.json();
-}
-
-export async function giveUp() {
-  const res = await fetch(`${API_BASE}/api/game/give-up`, {
-    method: "POST",
+    signal,  // permet d'annuler le fetch via AbortController
   });
   if (!res.ok) throw new Error("Erreur serveur");
   return res.json();
