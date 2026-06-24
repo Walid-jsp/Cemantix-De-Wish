@@ -167,13 +167,30 @@ def get_hint(
 
     messages.append({"role": "user", "parts": [player_message]})
 
-    model = genai.GenerativeModel(
-        model_name=_GEMINI_MODEL,
-        system_instruction=system,
-    )
-
-    chat = model.start_chat(history=messages[:-1])
-    response = chat.send_message(messages[-1]["parts"][0])
+    fallback_model = "gemini-1.5-flash"
+    try:
+        model = genai.GenerativeModel(
+            model_name=_GEMINI_MODEL,
+            system_instruction=system,
+        )
+        chat = model.start_chat(history=messages[:-1])
+        response = chat.send_message(messages[-1]["parts"][0])
+    except Exception as e:
+        error_msg = str(e)
+        if ("429" in error_msg or "quota" in error_msg.lower() or "limit" in error_msg.lower() or "billing" in error_msg.lower()) and _GEMINI_MODEL != fallback_model:
+            print(f"[Chatbot] Quota ou billing dépassé avec {_GEMINI_MODEL}. Tentative de repli automatique sur {fallback_model}...")
+            try:
+                model = genai.GenerativeModel(
+                    model_name=fallback_model,
+                    system_instruction=system,
+                )
+                chat = model.start_chat(history=messages[:-1])
+                response = chat.send_message(messages[-1]["parts"][0])
+            except Exception as e_fallback:
+                print(f"[Chatbot] Échec également avec le modèle de repli {fallback_model} : {e_fallback}")
+                raise e_fallback
+        else:
+            raise e
 
     # Incrémenter le compteur uniquement après un appel réussi
     increment_counter()
