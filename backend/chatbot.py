@@ -15,7 +15,7 @@ from quota import can_call_gemini, increment_counter
 
 # ── Configuration ────────────────────────────────────────────────────
 
-_GEMINI_MODEL = "gemini-2.0-flash"
+_GEMINI_MODEL = "gemini-3.5-flash"
 
 # ── Personnalités du chatbot ─────────────────────────────────────────
 
@@ -167,7 +167,7 @@ def get_hint(
 
     messages.append({"role": "user", "parts": [player_message]})
 
-    fallback_model = "gemini-1.5-flash"
+    fallback_model = "gemini-3.1-flash-lite"
     try:
         model = genai.GenerativeModel(
             model_name=_GEMINI_MODEL,
