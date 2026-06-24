@@ -5,8 +5,8 @@ Maintient un compteur en mémoire (remis à zéro automatiquement chaque jour).
 Si le quota quotidien est atteint, les appels à Gemini sont bloqués
 et une réponse de secours est retournée au joueur.
 
-Quota gratuit Gemini 2.0 Flash : 1 500 requêtes / jour.
-On prend une marge de sécurité et on limite à 1 400.
+Quota gratuit Gemini 3.1 Flash-Lite : ~1 000 requêtes / jour.
+On prend une marge de sécurité et on limite à 900.
 """
 
 from datetime import date
@@ -14,7 +14,7 @@ from datetime import date
 # ── Configuration ────────────────────────────────────────────────────
 
 # Limite journalière (en dessous du free tier de 1500 req/jour)
-DAILY_LIMIT = 1400
+DAILY_LIMIT = 900
 
 # ── État en mémoire ──────────────────────────────────────────────────
 
