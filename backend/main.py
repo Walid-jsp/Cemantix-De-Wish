@@ -160,7 +160,7 @@ async def quota_status():
 
 @app.post("/api/chat", response_model=ChatResponse)
 @limiter.limit("10/minute")
-async def chat(req: ChatRequest, request: Request):
+def chat(req: ChatRequest, request: Request):
     """
     Envoie un message au chatbot Gemini et renvoie la réponse.
     """

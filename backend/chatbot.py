@@ -138,7 +138,7 @@ def get_hint(
             "le quota quotidien a été atteint. Reviens demain pour de nouveaux indices !"
         )
 
-    genai.configure(api_key=api_key)
+    genai.configure(api_key=api_key, transport="rest")
 
     player_context = _build_player_context(guesses)
     personality_prompt = PERSONALITY_PROMPTS.get(personality, PERSONALITY_PROMPTS["coach"])

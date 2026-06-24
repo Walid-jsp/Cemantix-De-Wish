@@ -9,4 +9,4 @@ services:
         value: 3.11.0
       - key: ALLOWED_ORIGINS
         value: "https://cemantix-de-wish.vercel.app,https://cemantish.vercel.app"
-      # N'oublie pas d'ajouter ta clé secrète GEMINI_API_KEY dans l'interface Render !
+      
