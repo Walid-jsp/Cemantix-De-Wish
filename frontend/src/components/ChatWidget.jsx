@@ -25,7 +25,7 @@ export default function ChatWidget({ guesses, gameOver }) {
   const [showPersonalities, setShowPersonalities] = useState(false);
   const messagesEndRef = useRef(null);
   const abortRef = useRef(null);   // pour annuler le fetch en cours si besoin
-  const maxHints = 5;
+  const maxHints = 3;
 
   // Persist
   useEffect(() => {
@@ -66,7 +66,7 @@ export default function ChatWidget({ guesses, gameOver }) {
       setMessages(prev => [
         ...prev,
         { role: "user", content: text },
-        { role: "bot", content: "Tu as utilisé tes 5 indices pour aujourd'hui. Reviens demain !" },
+        { role: "bot", content: "Tu as utilisé tes 3 indices pour aujourd'hui. Reviens demain !" },
       ]);
       setInput("");
       return;

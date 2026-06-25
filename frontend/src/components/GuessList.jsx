@@ -51,7 +51,7 @@ export default function GuessList({ guesses }) {
   return (
     <div className="guess-list" id="guess-list">
       {sorted.map((guess, index) => {
-        const realRank = guess.is_top_1000 ? 1000 - guess.score : null;
+        const realRank = guess.is_top_1000 ? 1000 - guess.score + 1 : null;
         const { barColor, scoreColor, barWidth, rowAccent } = getScoreStyle(guess.score, guess.is_top_1000);
 
         const rankLabel = guess.is_top_1000 && guess.score < 1000

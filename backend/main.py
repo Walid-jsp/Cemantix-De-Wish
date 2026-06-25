@@ -146,7 +146,7 @@ async def hint_count():
     Renvoie la limite d'indices par jour.
     Le comptage effectif se fait côté client (localStorage).
     """
-    return {"max_hints": 5}
+    return {"max_hints": 3}
 
 
 @app.get("/api/quota/status")
@@ -167,9 +167,9 @@ def chat(req: ChatRequest, request: Request):
     if not req.message.strip():
         raise HTTPException(status_code=400, detail="Le message ne peut pas être vide.")
 
-    if req.hint_number > 5:
+    if req.hint_number > 3:
         return ChatResponse(
-            reply="Tu as utilisé tes 5 indices pour aujourd'hui. Reviens demain pour de nouveaux indices !"
+            reply="Tu as utilisé tes 3 indices pour aujourd'hui. Reviens demain pour de nouveaux indices !"
         )
 
     secret = get_daily_word()
